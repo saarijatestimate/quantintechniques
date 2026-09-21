@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: quantintechniques-hr
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 1 --timeout 120 app:app
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.11
+      - key: MCP_SERVER_URL
+        fromService:
+          type: web
+          name: quantintechniques-hr-mcp
+          property: host
+
+  - type: web
+    name: quantintechniques-hr-mcp
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 1 --timeout 120 scripts.mcp_http_server:app
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.11

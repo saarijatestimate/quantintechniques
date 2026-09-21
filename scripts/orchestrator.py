@@ -242,6 +242,9 @@ class AgentOrchestrator:
         tool_names = self._matching_tools(normalized)
         tool_terms = ('current', 'latest', 'live', 'today', 'lookup', 'search', 'send', 'create', 'update', 'delete')
         requires_tool = bool(tool_names) or any(term in normalized for term in tool_terms)
+        if workflow_name and 'retrieve_policy' in self.tools:
+            tool_names = tuple(dict.fromkeys((*tool_names, 'retrieve_policy')))
+            requires_tool = True
         clarification_question = self._clarification_question(normalized, workflow_name, requires_tool)
         clarification_required = clarification_question is not None
 

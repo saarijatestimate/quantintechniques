@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>People Desk | HR policy assistant</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <main class="shell">
+    <aside class="rail">
+      <div class="brand-mark">PD</div>
+      <div>
+        <p class="eyebrow">People Desk</p>
+        <h1>Policy, made clear.</h1>
+        <p class="rail-copy">Ask about HR policy, eligibility, PTO, benefits, or the next step in a workflow.</p>
+      </div>
+      <div class="rail-footer">
+        <span class="status-dot"></span>
+        <span id="connection-status">Checking assistant connection...</span>
+      </div>
+    </aside>
+
+    <section class="workspace" aria-label="HR assistant">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">HR policy assistant</p>
+          <h2>How can we help?</h2>
+        </div>
+        <div class="privacy-label">Internal guidance · sources shown</div>
+      </header>
+
+      <section class="demo-strip" aria-label="Reproducible demo tasks">
+        <div>
+          <p class="eyebrow">Demo tasks</p>
+          <p class="demo-copy">Run a complete workflow through the agent and inspect its evidence trail.</p>
+          <p class="cold-start-note">Free-tier services may sleep. The first run can take longer while the assistant and MCP service wake up.</p>
+        </div>
+        <div class="demo-actions">
+          <button class="demo-button" data-demo="remote-work-eligibility">Remote eligibility <span>↗</span></button>
+          <button class="demo-button" data-demo="pto-request-guidance">PTO guidance <span>↗</span></button>
+        </div>
+      </section>
+
+      <div id="chat-log" class="chat-log" aria-live="polite">
+        <article class="message assistant-message welcome-message">
+          <div class="avatar">PD</div>
+          <div class="message-body">
+            <p class="message-label">People Desk</p>
+            <p>Bring me a policy question or workflow task. I’ll show the evidence and flag when HR review is needed.</p>
+            <div class="starter-row">
+              <button class="starter" data-prompt="Am I eligible to work remote?">Remote work eligibility</button>
+              <button class="starter" data-prompt="How do I request PTO?">PTO request guidance</button>
+              <button class="starter" data-prompt="What benefits enrollment options do I have?">Benefits question</button>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <section id="confirmation-panel" class="confirmation-panel hidden" aria-live="polite">
+        <div>
+          <p class="message-label">Confirmation required</p>
+          <p>This action is still a safe mock preview. Confirm only if you want the requested action sent to the MCP tool.</p>
+        </div>
+        <button id="confirm-action" class="confirm-button">Confirm action</button>
+      </section>
+
+      <form id="chat-form" class="composer">
+        <label class="sr-only" for="message-input">Ask an HR question</label>
+        <textarea id="message-input" rows="1" placeholder="Ask an HR policy or workflow question..."></textarea>
+        <button id="send-button" type="submit" aria-label="Send question">Send <span>↗</span></button>
+      </form>
+      <p class="composer-note">Guidance is based on retrieved policy sources. Sensitive or incomplete cases may require HR escalation.</p>
+    </section>
+
+    <aside class="evidence-panel" aria-label="Evidence and operational trace">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Audit view</p>
+          <h3>Evidence trail</h3>
+        </div>
+        <span id="trace-count" class="count-badge">0</span>
+      </div>
+      <section>
+        <p class="section-label">Retrieved sources</p>
+        <div id="sources" class="source-list"><p class="empty-state">Sources will appear after your first question.</p></div>
+      </section>
+      <section>
+        <p class="section-label">Operational trace</p>
+        <div id="trace" class="trace-list"><p class="empty-state">Routing and tool activity will appear here.</p></div>
+      </section>
+    </aside>
+  </main>
+  <script src="{{ url_for('static', filename='chat.js') }}"></script>
+</body>
+</html>
