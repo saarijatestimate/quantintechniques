@@ -1,0 +1,21 @@
+Policy Statement
+
+This code is covered with top-level security controls and NDA protection.
+
+Confidentiality:
+- All source code, configuration files, environment settings, and related artifacts are treated as confidential information.
+- Access is restricted to authorized personnel only.
+
+Security Controls:
+- Code is subject to top-level security review and protection measures.
+- Sensitive configuration and environment data is handled in accordance with organizational security requirements.
+- Production and non-production environments are managed under controlled access policies.
+
+NDA Protection:
+- This code is covered by top-level non-disclosure agreement protection.
+- Unauthorized disclosure, copying, reverse engineering, or distribution is prohibited.
+
+Compliance:
+- All use of this code must comply with internal security policy, client requirements, and applicable confidentiality obligations.
+
+This statement confirms that the code is covered with top-level security and NDA protections.

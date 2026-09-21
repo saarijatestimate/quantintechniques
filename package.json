@@ -1,0 +1,12 @@
+{
+  "name": "quantintechniques",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Environment-based configuration selector for int, syst, and accept",
+  "scripts": {
+    "env:int": "python scripts/select_env.py int",
+    "env:syst": "python scripts/select_env.py syst",
+    "env:accept": "python scripts/select_env.py accept",
+    "start": "python src/index.py"
+  }
+}
