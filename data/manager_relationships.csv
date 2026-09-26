@@ -1,0 +1,6 @@
+relationship_id,synthetic_record,employee_id,manager_employee_id,relationship_type,effective_date,is_primary
+REL-DEMO-001,TRUE,DEMO-1001,DEMO-1004,direct_manager,2023-04-17,TRUE
+REL-DEMO-002,TRUE,DEMO-1002,DEMO-1005,direct_manager,2022-09-05,TRUE
+REL-DEMO-003,TRUE,DEMO-1003,DEMO-1004,direct_manager,2024-01-22,TRUE
+REL-DEMO-004,TRUE,DEMO-1004,,department_lead,2021-06-14,TRUE
+REL-DEMO-005,TRUE,DEMO-1005,,department_lead,2020-11-02,TRUE

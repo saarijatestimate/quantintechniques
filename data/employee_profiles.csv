@@ -1,0 +1,6 @@
+employee_id,synthetic_record,first_name,last_name,email,job_title,department,employment_type,hire_date,office_id,manager_employee_id,status
+DEMO-1001,TRUE,Alex,Sample,alex.sample@example.test,People Operations Analyst,People Operations,full_time,2023-04-17,OFF-SEA,DEMO-1004,active
+DEMO-1002,TRUE,Jordan,Example,jordan.example@example.test,Platform Engineer,Engineering,full_time,2022-09-05,OFF-HEL,DEMO-1005,active
+DEMO-1003,TRUE,Taylor,Fiction,taylor.fiction@example.test,Support Specialist,Customer Support,part_time,2024-01-22,OFF-TMP,DEMO-1004,active
+DEMO-1004,TRUE,Morgan,Placeholder,morgan.placeholder@example.test,Operations Manager,People Operations,full_time,2021-06-14,OFF-SEA,,active
+DEMO-1005,TRUE,Riley,Demo,riley.demo@example.test,Engineering Manager,Engineering,full_time,2020-11-02,OFF-HEL,,active

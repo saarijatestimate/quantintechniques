@@ -1,0 +1,6 @@
+ticket_id,synthetic_record,created_at,employee_id,category,subject,status,priority,assigned_team,resolution_code
+TKT-DEMO-0001,TRUE,2026-09-03T09:15:00Z,DEMO-1001,benefits,Question about annual enrollment,open,normal,people_operations,
+TKT-DEMO-0002,TRUE,2026-09-04T13:40:00Z,DEMO-1002,pto,PTO balance clarification,resolved,low,people_operations,information_provided
+TKT-DEMO-0003,TRUE,2026-09-05T08:10:00Z,DEMO-1003,payroll,Part-time pay schedule question,in_progress,high,payroll_team,
+TKT-DEMO-0004,TRUE,2026-09-06T16:25:00Z,DEMO-1004,access,Request for reporting dashboard access,closed,normal,it_support,access_granted
+TKT-DEMO-0005,TRUE,2026-09-07T11:05:00Z,DEMO-1005,employee_relations,Manager consultation request,open,normal,people_operations,

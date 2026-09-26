@@ -1,0 +1,6 @@
+employee_id,synthetic_record,effective_date,medical_plan,dental_plan,vision_plan,retirement_contribution_percent,has_hsa,coverage_tier
+DEMO-1001,TRUE,2026-01-01,standard_plus,standard,none,6,TRUE,employee_only
+DEMO-1002,TRUE,2026-01-01,premium,standard,standard,8,TRUE,employee_plus_spouse
+DEMO-1003,TRUE,2026-01-01,none,standard,none,3,FALSE,employee_only
+DEMO-1004,TRUE,2026-01-01,premium,premium,standard,10,TRUE,family
+DEMO-1005,TRUE,2026-01-01,standard_plus,premium,standard,9,TRUE,employee_plus_children

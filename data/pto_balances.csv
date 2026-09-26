@@ -1,0 +1,6 @@
+employee_id,synthetic_record,as_of_date,annual_pto_days,used_pto_days,scheduled_pto_days,remaining_pto_days,sick_days_available
+DEMO-1001,TRUE,2026-09-01,25,8,2,15,10
+DEMO-1002,TRUE,2026-09-01,25,12,0,13,7
+DEMO-1003,TRUE,2026-09-01,15,4,3,8,5
+DEMO-1004,TRUE,2026-09-01,30,10,5,15,12
+DEMO-1005,TRUE,2026-09-01,30,7,4,19,14

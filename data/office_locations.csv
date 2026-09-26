@@ -1,0 +1,4 @@
+office_id,synthetic_record,office_name,city,country,timezone,workplace_type,active
+OFF-SEA,TRUE,Harbor Demo Office,Seattle,US,America/Los_Angeles,hybrid,TRUE
+OFF-HEL,TRUE,North Demo Office,Helsinki,FI,Europe/Helsinki,hybrid,TRUE
+OFF-TMP,TRUE,Temporary Demo Hub,Tampere,FI,Europe/Helsinki,remote_hub,TRUE
