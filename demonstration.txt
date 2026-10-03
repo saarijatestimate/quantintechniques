@@ -1,0 +1,31 @@
+PROJECT DEMONSTRATION SPEECH
+
+Hello, and welcome. Today I’m demonstrating Quantic Techniques, a sample HR policy assistant and environment-based application.
+
+The project brings together a Flask web interface, a request orchestrator, policy retrieval, and an MCP-compatible tool server. 
+A person can ask a question about HR guidance, and the application can retrieve relevant policy information, route suitable requests to tools,
+ and present the answer along with supporting sources and an operational trace.
+
+For example, the assistant can help explain remote-work eligibility or guide someone through a PTO request. 
+The project also includes mock tools for looking up employee profiles, PTO balances, benefits status, and HR tickets. 
+These examples are intended for demonstration and testing; they do not represent real employee records.
+
+The sample HR datasets are stored as CSV files in the data folder.
+ They include employee profiles, PTO balances, benefits elections, manager relationships, office locations, and support tickets. Every record is clearly marked synthetic.
+  The employee IDs use a DEMO prefix, and the example email addresses use the reserved example.test domain. This makes the data suitable for illustrating relationships and workflows without using real private employee information.
+
+The application can run the MCP server locally over standard input and output, or use the separate HTTP service configuration for a hosted demonstration. 
+Policy questions can use local retrieval, and tool calls can return structured results. Actions that could change data or create a ticket are protected by an explicit confirmation step; without confirmation, 
+the system returns a mock preview rather than carrying out the action.
+
+The repository also includes automated tests for application endpoints, workflows, policy retrieval, orchestration, and MCP communication. 
+Separate configuration files support the int, syst, and accept environments, while the optional PostgreSQL and pgvector setup can be used for storing embedded policy chunks.
+
+To demonstrate the application, I would start the Flask app, open it in a browser, and try one of the included examples, such as remote-work eligibility or PTO request guidance. 
+ would then point out the retrieved policy evidence, the assistant’s response, and the operational trace. Finally, 
+ I would show the synthetic CSV datasets and explain the confirmation safeguards for actions such as creating an HR ticket.
+
+In summary, Quantic Techniques demonstrates how policy retrieval, HR workflows, structured tools, environment configuration, 
+and automated tests can work together in a sample application. Its HR records are fictional, and its protected actions are designed to require explicit confirmation.
+
+Thank you for your time. 
