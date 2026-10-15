@@ -309,9 +309,14 @@ class AgentOrchestrator:
         spec = self.tools[tool_name]
         arguments: Dict[str, Any] = {'query': query}
         required = spec.input_schema.get('required', [])
-        employee_match = re.search(r'\b(?:employee\s*id|employee|eid)\s*[:#]?\s*([A-Za-z0-9-]+)', query, re.IGNORECASE)
+        employee_match = re.search(
+            r'\b(?:employee\s*id|eid)\s*[:#]?\s*([A-Za-z0-9-]+)'
+            r'|\bemployee\s+([A-Za-z0-9-]*\d[A-Za-z0-9-]*)',
+            query,
+            re.IGNORECASE,
+        )
         if employee_match:
-            arguments['employee_id'] = employee_match.group(1)
+            arguments['employee_id'] = next(group for group in employee_match.groups() if group)
         if confirmed:
             arguments['confirmed'] = True
         missing = [name for name in required if not arguments.get(name)]

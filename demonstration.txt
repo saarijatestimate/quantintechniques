@@ -1,31 +1,39 @@
-PROJECT DEMONSTRATION SPEECH
+PROJECT DEMONSTRATION
 
-Hello, and welcome. Today I’m demonstrating Quantic Techniques, a sample HR policy assistant and environment-based application.
+Quantic Techniques is a sample HR policy assistant. The deployed Flask app accepts questions through its chat interface and /api/chat endpoint, routes HR requests to workflow logic, retrieves policy snippets, calls an MCP server, and returns a response with citations and an operational trace. The Render configuration connects the web app to the MCP service over HTTP; local runs can use stdio instead. The employee records and MCP tool outputs are mock demonstration data, not real employee information.
 
-The project brings together a Flask web interface, a request orchestrator, policy retrieval, and an MCP-compatible tool server. 
-A person can ask a question about HR guidance, and the application can retrieve relevant policy information, route suitable requests to tools,
- and present the answer along with supporting sources and an operational trace.
+END-TO-END TASK 1: REMOTE-WORK ELIGIBILITY
 
-For example, the assistant can help explain remote-work eligibility or guide someone through a PTO request. 
-The project also includes mock tools for looking up employee profiles, PTO balances, benefits status, and HR tickets. 
-These examples are intended for demonstration and testing; they do not represent real employee records.
+Example request:
+POST /api/chat
+{"message":"Am I eligible to work remotely from Finland? employee ID DEMO-1002"}
 
-The sample HR datasets are stored as CSV files in the data folder.
- They include employee profiles, PTO balances, benefits elections, manager relationships, office locations, and support tickets. Every record is clearly marked synthetic.
-  The employee IDs use a DEMO prefix, and the example email addresses use the reserved example.test domain. This makes the data suitable for illustrating relationships and workflows without using real private employee information.
+1. The app recognizes the remote-work-eligibility workflow. Its workflow steps are to gather role and location, consult policy, check team coverage and manager approval, check security readiness, and summarize conditions and escalation. These steps guide the response; they are not separate tool calls.
+2. The app retrieves policy context locally (details of this RAG path are below). It also calls these MCP tools:
+   - lookup_employee_profile with {"query":"Am I eligible to work remotely from Finland? employee ID DEMO-1002","employee_id":"DEMO-1002"}. The mock server returns {"employee_id":"DEMO-1002","name":"Mock Employee","department":"People Operations","location":"Helsinki","employment_status":"active"}. This is a fixed mock response; it does not look up the CSV profile.
+   - retrieve_policy with {"query":"Am I eligible to work remotely from Finland? employee ID DEMO-1002"}. The orchestrator does not pass top_k, so the server uses its default of 5. The server returns the two entries in its small policy index: remote-001 from remote_work_policy.md ("Remote work requires manager approval and an approved secure workspace.") and pto-001 from pto_policy.md ("PTO requests should be submitted through the approved HR channel before leave begins."). The remote-work entry is the relevant evidence.
+3. The app assembles the user question, retrieved snippets and source IDs, the profile result, the workflow steps, and instructions not to make unsupported claims into a synthesis prompt. A source-grounded response should say that the available policy requires manager approval and an approved secure workspace; the mock profile reports Helsinki. The index does not establish Finland-specific eligibility, the user's actual role, team coverage, or security readiness, so the assistant must ask for those details or recommend confirmation with the manager/HR rather than declare the employee eligible.
+4. The response includes citation metadata/snippets and a trace showing retrieval and MCP calls. In the current implementation the default synthesizer returns the assembled prompt verbatim; it is not connected to a language model that turns the prompt into polished prose.
 
-The application can run the MCP server locally over standard input and output, or use the separate HTTP service configuration for a hosted demonstration. 
-Policy questions can use local retrieval, and tool calls can return structured results. Actions that could change data or create a ticket are protected by an explicit confirmation step; without confirmation, 
-the system returns a mock preview rather than carrying out the action.
+END-TO-END TASK 2: PTO REQUEST GUIDANCE
 
-The repository also includes automated tests for application endpoints, workflows, policy retrieval, orchestration, and MCP communication. 
-Separate configuration files support the int, syst, and accept environments, while the optional PostgreSQL and pgvector setup can be used for storing embedded policy chunks.
+Example request:
+POST /api/chat
+{"message":"How do I request PTO for next week? eid: DEMO-1002"}
 
-To demonstrate the application, I would start the Flask app, open it in a browser, and try one of the included examples, such as remote-work eligibility or PTO request guidance. 
- would then point out the retrieved policy evidence, the assistant’s response, and the operational trace. Finally, 
- I would show the synthetic CSV datasets and explain the confirmation safeguards for actions such as creating an HR ticket.
+1. The app recognizes the PTO-request workflow: dates and PTO type, balance and policy, handover, approver/submission channel, and confirmation. It does not have a separate MCP tool for manager approval or submitting a PTO request.
+2. The local policy retrieval runs, and the MCP calls are:
+   - check_pto_balance with {"query":"How do I request PTO for next week? eid: DEMO-1002","employee_id":"DEMO-1002"}. The orchestrator extracts the identifier from "eid". The mock server returns {"employee_id":"DEMO-1002","available_days":18,"pending_days":2,"as_of":"2026-09-21"}.
+   - retrieve_policy with {"query":"How do I request PTO for next week? eid: DEMO-1002"}. Again, top_k is omitted, so the server uses 5 and returns its indexed entries. The relevant entry is pto-001 from pto_policy.md: "PTO requests should be submitted through the approved HR channel before leave begins."
+3. The app combines that citation with the balance result and PTO workflow. A grounded answer can explain the mock balance, advise submitting through the approved HR channel before leave starts, and ask for dates/type and a handover plan. It must not imply the request has been approved or submitted: neither tool does that. The policy snippet contains no notice-period or blackout-date rule, so the app cannot state one based on this evidence.
+4. The response exposes the citation, tool results, and operational trace. As in task 1, the default synthesizer currently returns a prompt containing these materials, rather than generated conversational prose.
 
-In summary, Quantic Techniques demonstrates how policy retrieval, HR workflows, structured tools, environment configuration, 
-and automated tests can work together in a sample application. Its HR records are fictional, and its protected actions are designed to require explicit confirmation.
+RAG GROUNDING AND IMPLEMENTATION LIMITS
 
-Thank you for your time. 
+- Chunking: there is no document parsing or chunking pipeline in the deployed chat path. app.py defines three manually authored, one-sentence snippets as POLICY_CHUNKS. scripts/mcp_server.py has a separate two-snippet POLICY_INDEX. These are fixed records, not chunks produced from the policy PDFs.
+- Embedding model: none is called. app.py has two-number placeholder vectors hardcoded on its local snippets. No embedding package or model is configured.
+- Vector store: chat retrieval uses in-memory Python lists. scripts/init_vector_db.py can initialize a PostgreSQL/pgvector table with vector(1536), but that table is not populated or queried by the chat path.
+- Retrieval: app.py asks the local retriever for top_k=5 (there are only three local snippets), with query rewriting and reranking enabled. No metadata filters or synonyms are configured. The current cosine calculation compares stored vectors to an all-ones vector, not to an embedding of the user's query; reranking counts exact occurrences of the whole query. Consequently, this is a stub, not semantic top-k RAG. The separate MCP retrieve_policy call also searches its two fixed snippets, defaults to top_k=5, and does not receive a top_k from the orchestrator.
+- Citation example: remote-001 / remote_work_policy.md directly supports only the condition that "Remote work requires manager approval and an approved secure workspace." pto-001 / pto_policy.md directly supports submitting PTO through the approved HR channel before leave begins. Neither snippet supports claims beyond its text.
+
+These limitations matter when presenting the examples: describe the tool outputs as mock, cite the specific snippets, and be explicit when the available evidence cannot establish eligibility, approval, or a completed HR action. The repository includes tests for the app endpoints, workflows, retrieval, orchestration, and MCP communication.
