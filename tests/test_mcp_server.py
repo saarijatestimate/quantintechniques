@@ -83,7 +83,7 @@ class MCPServerTests(unittest.TestCase):
             client.close()
 
         self.assertIn('retrieve_policy', tool_names)
-        self.assertEqual(result['results'][0]['source'], 'pto_policy.md')
+        self.assertEqual(result['results'][0]['source'], 'remote_work_policy.md')
 
     def test_requires_employee_id(self):
         response = self.server.handle({
