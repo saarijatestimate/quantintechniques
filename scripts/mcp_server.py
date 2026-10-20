@@ -17,13 +17,13 @@ POLICY_INDEX = [
         'id': 'remote-001',
         'source': 'remote_work_policy.md',
         'text': 'Remote work requires manager approval and an approved secure workspace.',
-        'metadata': {'topic': 'remote work', 'region': 'global'},
+        'metadata': {'topic': 'remote work', 'section': 'Remote work', 'region': 'global'},
     },
     {
         'id': 'pto-001',
         'source': 'pto_policy.md',
         'text': 'PTO requests should be submitted through the approved HR channel before leave begins.',
-        'metadata': {'topic': 'PTO', 'region': 'global'},
+        'metadata': {'topic': 'PTO', 'section': 'PTO requests', 'region': 'global'},
     },
 ]
 
@@ -227,6 +227,7 @@ class MCPServer:
                 POLICY_INDEX,
                 arguments['query'],
                 top_k=min(int(arguments.get('top_k', 5)), 10),
+                rerank=True,
             )
             result = {
                 'query': arguments['query'],

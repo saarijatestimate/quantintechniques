@@ -47,6 +47,7 @@ button { cursor: pointer; }
 .message-body { max-width: 610px; }
 .message-label { color: var(--muted); }
 .message-body > p:not(.message-label) { margin: 0; line-height: 1.7; font-size: 15px; }
+.assistant-message .message-body > p:not(.message-label) { white-space: pre-line; }
 .user-message .message-body { padding: 14px 18px; background: var(--white); border: 1px solid var(--line); border-radius: 4px 16px 16px 16px; }
 .user-message .message-label { display: none; }
 .starter-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }

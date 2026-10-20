@@ -36,11 +36,15 @@ The repository includes [render.yaml](render.yaml) for two zero-cost Render web 
 
 The web service receives the MCP service host through `MCP_SERVER_URL`. The HTTP client normalizes that host to HTTPS and calls the MCP JSON-RPC endpoint at `/mcp`. When `MCP_SERVER_URL` is absent locally, the app falls back to the stdio MCP server.
 
-After deployment, Render provides a shareable URL in this form:
+Both services set `autoDeployTrigger: checksPass` so a provisioned Render Blueprint waits for checks to pass before automatic deployment.
+
+The service name suggests a URL in this form, but confirm the assigned hostname in the Render dashboard:
 
 ```text
 https://quantintechniques-hr.onrender.com
 ```
+
+This candidate returned HTTP 404 during the demonstration verification on 2026-10-19, so it is not evidence of a live deployment. Use the URL shown by Render after the Blueprint has been provisioned.
 
 Verify the deployment with:
 
@@ -116,9 +120,9 @@ Example response shape:
 
 ```json
 {
-    "answer": "Remote work requires manager approval...",
-    "citations": [{"id": "remote-001", "source": "remote_work_policy.md", "metadata": {"topic": "remote work"}}],
-    "snippets": [{"id": "remote-001", "source": "remote_work_policy.md", "text": "Remote work requires manager approval..."}],
+    "answer": "I cannot confirm remote-work eligibility...\n\nThe retrieved policy says:\n\n- “Remote work requires manager approval and an approved secure workspace.” [remote-001; remote_work_policy.md; Remote work]",
+    "citations": [{"id": "remote-001", "source": "remote_work_policy.md", "metadata": {"topic": "remote work", "section": "Remote work"}}],
+    "snippets": [{"id": "remote-001", "source": "remote_work_policy.md", "text": "Remote work requires manager approval and an approved secure workspace."}],
     "trace": [{"event": "tool_call", "tool": "retrieve_policy", "arguments": {"query": "remote work"}}]
 }
 ```

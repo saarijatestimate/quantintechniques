@@ -74,7 +74,7 @@ class AgentOrchestrator:
         self.chunks = list(chunks)
         self.mcp_client = mcp_client
         self.tools = {tool.name: tool for tool in tools}
-        self.synthesizer = synthesizer or self._default_synthesizer
+        self.synthesizer = synthesizer
         self.top_k = top_k
         self.retrieval_filters = retrieval_filters
         self.query_rewrite = query_rewrite
@@ -186,7 +186,16 @@ class AgentOrchestrator:
             'escalation': escalation,
             'escalation_reason': escalation_reason,
         })
-        answer = self.synthesizer(prompt)
+        if self.synthesizer is None:
+            answer = self._default_synthesizer(
+                query,
+                retrieved,
+                tool_results,
+                intent,
+                trace,
+            )
+        else:
+            answer = self.synthesizer(prompt)
         return OrchestrationResult(answer, intent, retrieved, tool_results, prompt, trace)
 
     def _record_trace(self, trace: List[Dict[str, Any]], event: str, details: Dict[str, Any]) -> None:
@@ -242,14 +251,28 @@ class AgentOrchestrator:
         tool_names = self._matching_tools(normalized)
         tool_terms = ('current', 'latest', 'live', 'today', 'lookup', 'search', 'send', 'create', 'update', 'delete')
         requires_tool = bool(tool_names) or any(term in normalized for term in tool_terms)
-        if workflow_name and 'retrieve_policy' in self.tools:
-            tool_names = tuple(dict.fromkeys((*tool_names, 'retrieve_policy')))
+        if workflow_name:
+            workflow_tools = []
+            has_employee_id = self._employee_id(query) is not None
+            if workflow_name == 'remote_work_eligibility':
+                if has_employee_id and 'lookup_employee_profile' in self.tools:
+                    workflow_tools.append('lookup_employee_profile')
+                if 'check_policy_compliance' in self.tools:
+                    workflow_tools.append('check_policy_compliance')
+            elif workflow_name == 'pto_request' and has_employee_id and 'check_pto_balance' in self.tools:
+                workflow_tools.append('check_pto_balance')
+            if 'retrieve_policy' in self.tools:
+                workflow_tools.append('retrieve_policy')
+            tool_names = tuple(dict.fromkeys((*workflow_tools, *tool_names)))
             requires_tool = True
         clarification_question = self._clarification_question(normalized, workflow_name, requires_tool)
+        if requires_tool and not tool_names and not workflow_name:
+            clarification_question = (
+                "I do not have a matching HR data or action tool for this request. "
+                "Please contact HR or rephrase the request using an available HR workflow."
+            )
         clarification_required = clarification_question is not None
 
-        if requires_tool and not tool_names and self.tools:
-            tool_names = tuple(self.tools)
         reason = 'clarification required' if clarification_required else ('HR workflow requires policy evidence and guided steps' if workflow_name else (
             'external or state-changing information requested' if requires_tool else 'retrieved context is sufficient'
         ))
@@ -307,20 +330,32 @@ class AgentOrchestrator:
         confirmed: bool = False,
     ) -> tuple[Dict[str, Any], List[str]]:
         spec = self.tools[tool_name]
-        arguments: Dict[str, Any] = {'query': query}
         required = spec.input_schema.get('required', [])
+        properties = spec.input_schema.get('properties', {})
+        arguments: Dict[str, Any] = {}
+        if not properties or 'query' in properties or 'query' in required:
+            arguments['query'] = query
+        employee_id = self._employee_id(query)
+        if employee_id and (
+            not properties or 'employee_id' in properties or 'employee_id' in required
+        ):
+            arguments['employee_id'] = employee_id
+        if confirmed and ('confirmed' in properties or 'confirmed' in required or not properties):
+            arguments['confirmed'] = True
+        missing = [name for name in required if not arguments.get(name)]
+        return arguments, missing
+
+    @staticmethod
+    def _employee_id(query: str) -> Optional[str]:
         employee_match = re.search(
             r'\b(?:employee\s*id|eid)\s*[:#]?\s*([A-Za-z0-9-]+)'
             r'|\bemployee\s+([A-Za-z0-9-]*\d[A-Za-z0-9-]*)',
             query,
             re.IGNORECASE,
         )
-        if employee_match:
-            arguments['employee_id'] = next(group for group in employee_match.groups() if group)
-        if confirmed:
-            arguments['confirmed'] = True
-        missing = [name for name in required if not arguments.get(name)]
-        return arguments, missing
+        if not employee_match:
+            return None
+        return next(group for group in employee_match.groups() if group)
 
     def _requires_confirmation(self, tool_name: str, confirmed: bool) -> bool:
         if confirmed:
@@ -345,13 +380,95 @@ class AgentOrchestrator:
         return None
 
     def _matching_tools(self, query: str) -> Sequence[str]:
+        ignored_terms = {
+            'a', 'an', 'and', 'are', 'as', 'at', 'by', 'check', 'current',
+            'data', 'do', 'employee', 'for', 'get', 'hr', 'i', 'id', 'in', 'is', 'it', 'latest',
+            'look', 'me', 'mock', 'my', 'of', 'on', 'or', 'please', 'policy',
+            'request', 'the', 'to', 'up', 'with',
+        }
+        query_terms = set(re.findall(r'[a-z0-9]+', query.lower())) - ignored_terms
         matches = []
         for tool in self.tools.values():
             searchable = f'{tool.name} {tool.description}'.lower()
-            if any(term in query for term in searchable.split()):
+            tool_terms = set(re.findall(r'[a-z0-9]+', searchable)) - ignored_terms
+            if query_terms & tool_terms:
                 matches.append(tool.name)
         return tuple(matches)
 
     @staticmethod
-    def _default_synthesizer(prompt: str) -> str:
-        return prompt
+    def _default_synthesizer(
+        query: str,
+        retrieved_chunks: Sequence[Dict[str, Any]],
+        tool_results: Mapping[str, Any],
+        intent: Intent,
+        trace: Sequence[Dict[str, Any]],
+    ) -> str:
+        if intent.clarification_question:
+            return intent.clarification_question
+
+        lines: List[str] = []
+        if intent.workflow_name == 'remote_work_eligibility':
+            lines.append("I cannot confirm remote-work eligibility from the available information.")
+            profile = tool_results.get('lookup_employee_profile')
+            if profile:
+                lines.append(
+                    f"Profile (mock data): {profile.get('name', 'Employee')} is listed as "
+                    f"{profile.get('employment_status', 'unknown')} in {profile.get('location', 'an unknown location')}."
+                )
+            lines.append("The retrieved policy says:")
+            lines.extend(AgentOrchestrator._citation_lines(retrieved_chunks))
+            compliance = tool_results.get('check_policy_compliance')
+            if compliance:
+                lines.append(
+                    f"Compliance check (mock): {compliance.get('reason', 'This is not an authoritative HR decision.')}"
+                )
+            lines.append(
+                "Next step: confirm the employing entity, role, manager approval, team coverage, and security requirements with HR. The available snippet does not establish Finland-specific eligibility."
+            )
+        elif intent.workflow_name == 'pto_request':
+            balance = tool_results.get('check_pto_balance')
+            if balance:
+                lines.append(
+                    f"Mock balance: {balance.get('available_days')} days available and "
+                    f"{balance.get('pending_days')} pending as of {balance.get('as_of')}."
+                )
+            lines.append("The retrieved policy says:")
+            lines.extend(AgentOrchestrator._citation_lines(retrieved_chunks))
+            lines.append(
+                "Next step: confirm the exact dates and PTO type, arrange a handover, and submit through the approved HR channel before leave begins. This guidance does not submit or approve a request."
+            )
+        else:
+            lines.append("Here is what I found:")
+            lines.extend(AgentOrchestrator._citation_lines(retrieved_chunks))
+            for name, value in tool_results.items():
+                lines.append(f"{name.replace('_', ' ').title()}: {AgentOrchestrator._format_tool_result(value)}")
+
+        for event in trace:
+            if event.get('event') == 'action_mocked':
+                lines.append(
+                    f"Confirmation required: {event['tool']} is a mock action and has not been submitted. Confirm only if you want to continue."
+                )
+            elif event.get('event') == 'tool_error':
+                lines.append(f"Tool limitation: {event.get('error', 'The tool could not complete the request.')}")
+
+        if not retrieved_chunks and not tool_results:
+            lines.append("I could not find policy evidence or a tool result for this request. Please contact HR for help.")
+        return '\n\n'.join(lines)
+
+    @staticmethod
+    def _citation_lines(chunks: Sequence[Dict[str, Any]]) -> List[str]:
+        if not chunks:
+            return ["- No matching policy source was retrieved."]
+        return [
+            f"- “{str(chunk.get('text') or chunk.get('content') or '').strip()}” "
+            f"[{chunk.get('id', 'unlisted')}; {chunk.get('source', 'unknown')}; "
+            f"{(chunk.get('metadata') or {}).get('section', 'section not specified')}]"
+            for chunk in chunks
+            if str(chunk.get('text') or chunk.get('content') or '').strip()
+        ]
+
+    @staticmethod
+    def _format_tool_result(value: Any) -> str:
+        if not isinstance(value, Mapping):
+            return str(value)
+        return '; '.join(f'{key.replace("_", " ")}: {item}' for key, item in value.items())

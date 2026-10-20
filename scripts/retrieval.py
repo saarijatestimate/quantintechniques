@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from math import sqrt
 from typing import Any, Dict, Iterable, List, Optional
 
@@ -58,16 +59,25 @@ def apply_filters(chunks: Iterable[Dict[str, Any]], filters: Optional[Dict[str, 
 
 
 def rerank_results(chunks: Iterable[Dict[str, Any]], query: str) -> List[Dict[str, Any]]:
+    stop_words = {
+        'a', 'an', 'and', 'are', 'as', 'at', 'be', 'can', 'do', 'does', 'for',
+        'from', 'how', 'i', 'in', 'is', 'it', 'me', 'my', 'of', 'on', 'or',
+        'please', 'the', 'to', 'what', 'when', 'where', 'which', 'who', 'why',
+        'with', 'would',
+    }
+    query_terms = {
+        term for term in re.findall(r'[a-z0-9]+', query.lower())
+        if term not in stop_words
+    }
     scored = []
-    query_lower = query.lower()
     for chunk in chunks:
         text = str(chunk.get('text', ''))
-        score = text.lower().count(query_lower)
-        if score > 0:
-            score += 1
+        text_terms = re.findall(r'[a-z0-9]+', text.lower())
+        score = sum(text_terms.count(term) for term in query_terms)
         scored.append({**chunk, '_rerank_score': score})
     scored.sort(key=lambda item: item['_rerank_score'], reverse=True)
-    return [{k: v for k, v in item.items() if k != '_rerank_score'} for item in scored]
+    matched = [item for item in scored if item['_rerank_score'] > 0]
+    return [{k: v for k, v in item.items() if k != '_rerank_score'} for item in matched]
 
 
 def retrieve_top_k(
@@ -84,6 +94,9 @@ def retrieve_top_k(
     query_text = rewrite_query(query, synonyms) if query_rewrite else query
     filtered = apply_filters(chunks, filters)
 
+    if rerank:
+        return rerank_results(filtered, query_text)[:top_k]
+
     scored: List[Dict[str, Any]] = []
     for chunk in filtered:
         embedding = chunk.get(embedding_key)
@@ -94,9 +107,4 @@ def retrieve_top_k(
         scored.append({**chunk, '_score': similarity})
 
     scored.sort(key=lambda item: item['_score'], reverse=True)
-    results = scored[:top_k]
-
-    if rerank:
-        results = rerank_results(results, query_text)
-
-    return results
+    return scored[:top_k]

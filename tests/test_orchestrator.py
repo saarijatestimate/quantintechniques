@@ -50,6 +50,25 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual(result.operational_trace[1]['sources'][0]['source'], 'policy.md')
         self.assertFalse(result.operational_trace[2]['escalation'])
 
+    def test_default_answer_is_grounded_and_does_not_expose_synthesis_prompt(self):
+        agent = AgentOrchestrator(
+            chunks=[{
+                'id': 'pto-001',
+                'source': 'pto_policy.md',
+                'text': 'PTO requests should be submitted through the approved HR channel.',
+                'embedding': [1.0, 0.0],
+                'metadata': {'section': 'PTO requests'},
+            }],
+        )
+
+        result = agent.run('What is the PTO request policy?')
+
+        self.assertIn('pto_policy.md', result.answer)
+        self.assertIn('PTO requests', result.answer)
+        self.assertIn('PTO requests should be submitted', result.answer)
+        self.assertNotIn('You are a careful assistant', result.answer)
+        self.assertNotIn('Retrieved evidence:', result.answer)
+
     def test_external_request_calls_matching_mcp_tool(self):
         client = FakeMCPClient()
         agent = AgentOrchestrator(
@@ -71,6 +90,36 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual(tool_call['arguments']['query'], 'What is the latest order status?')
         self.assertEqual(tool_result['output']['status'], 'shipped')
         self.assertEqual(synthesis['answer_basis']['tool_names'], ['order_status'])
+
+    def test_tool_matching_uses_whole_words_not_substrings(self):
+        agent = AgentOrchestrator(
+            chunks=self.chunks,
+            tools=[
+                ToolSpec('search_policy_documents', 'search HR policy documents'),
+                ToolSpec('lookup_employee_profile', 'look up mock employee profile data by employee ID'),
+            ],
+        )
+
+        intent = agent.interpret_intent('Am I eligible to work remote from Finland? employee ID DEMO-1002')
+
+        self.assertEqual(intent.tool_names, ('lookup_employee_profile',))
+
+    def test_unsupported_live_request_does_not_call_every_registered_tool(self):
+        client = FakeMCPClient()
+        agent = AgentOrchestrator(
+            chunks=self.chunks,
+            mcp_client=client,
+            tools=[
+                ToolSpec('lookup_employee_profile', 'look up mock employee profile'),
+                ToolSpec('check_pto_balance', 'check PTO balance'),
+            ],
+        )
+
+        result = agent.run("What is today's payroll status?")
+
+        self.assertEqual(client.calls, [])
+        self.assertTrue(result.intent.clarification_required)
+        self.assertIn('matching HR data or action tool', result.answer)
 
     def test_trace_sink_receives_operational_events(self):
         events = []

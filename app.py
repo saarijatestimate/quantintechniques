@@ -20,43 +20,66 @@ POLICY_CHUNKS: List[Dict[str, Any]] = [
         'source': 'remote_work_policy.md',
         'text': 'Remote work requires manager approval and an approved secure workspace.',
         'embedding': [1.0, 0.0],
-        'metadata': {'topic': 'remote work', 'region': 'global'},
+        'metadata': {'topic': 'remote work', 'section': 'Remote work', 'region': 'global'},
     },
     {
         'id': 'pto-001',
         'source': 'pto_policy.md',
         'text': 'PTO requests should be submitted through the approved HR channel before leave begins.',
         'embedding': [0.8, 0.2],
-        'metadata': {'topic': 'PTO', 'region': 'global'},
+        'metadata': {'topic': 'PTO', 'section': 'PTO requests', 'region': 'global'},
     },
     {
         'id': 'benefits-001',
         'source': 'benefits_policy.md',
         'text': 'Benefits enrollment changes are handled during the annual enrollment window or after a qualifying life event.',
         'embedding': [0.6, 0.4],
-        'metadata': {'topic': 'benefits', 'region': 'global'},
+        'metadata': {'topic': 'benefits', 'section': 'Benefits enrollment', 'region': 'global'},
     },
 ]
 
 TOOL_SPECS = [
-    ToolSpec('retrieve_policy', 'retrieve HR policy evidence'),
-    ToolSpec('lookup_employee_profile', 'look up employee profile'),
-    ToolSpec('check_pto_balance', 'check PTO balance'),
-    ToolSpec('lookup_benefits_status', 'look up benefits status'),
-    ToolSpec('create_mock_hr_ticket', 'create a mock HR ticket'),
-    ToolSpec('draft_hr_email', 'draft an HR email'),
-    ToolSpec('check_policy_compliance', 'check policy compliance'),
+    ToolSpec('retrieve_policy', 'retrieve HR policy evidence', {
+        'properties': {'query': {'type': 'string'}}, 'required': ['query'],
+    }),
+    ToolSpec('search_policy_documents', 'search HR policy documents in the local RAG index', {
+        'properties': {'query': {'type': 'string'}}, 'required': ['query'],
+    }),
+    ToolSpec('lookup_employee_profile', 'look up employee profile', {
+        'properties': {'employee_id': {'type': 'string'}}, 'required': ['employee_id'],
+    }),
+    ToolSpec('check_pto_balance', 'check PTO balance', {
+        'properties': {'employee_id': {'type': 'string'}}, 'required': ['employee_id'],
+    }),
+    ToolSpec('lookup_benefits_status', 'look up benefits status', {
+        'properties': {'employee_id': {'type': 'string'}}, 'required': ['employee_id'],
+    }),
+    ToolSpec('check_policy_compliance', 'check policy compliance', {
+        'properties': {'query': {'type': 'string'}}, 'required': ['query'],
+    }),
+    ToolSpec('create_mock_hr_ticket', 'create a mock HR ticket', {
+        'properties': {
+            'query': {'type': 'string'},
+            'employee_id': {'type': 'string'},
+            'confirmed': {'type': 'boolean'},
+        },
+        'required': ['query'],
+    }),
+    ToolSpec('draft_hr_email', 'draft an HR email', {
+        'properties': {'query': {'type': 'string'}, 'confirmed': {'type': 'boolean'}},
+        'required': ['query'],
+    }),
 ]
 
 DEMO_TASKS = {
     'remote-work-eligibility': {
         'title': 'Remote-work eligibility',
-        'message': 'Am I eligible to work remote from Finland?',
+        'message': 'Am I eligible to work remote from Finland? employee ID DEMO-1002',
         'purpose': 'Runs the remote-work eligibility workflow with retrieved policy evidence.',
     },
     'pto-request-guidance': {
         'title': 'PTO request guidance',
-        'message': 'How do I request PTO for next week?',
+        'message': 'Search the PTO policy and check my balance for next week. employee ID DEMO-1002',
         'purpose': 'Runs the multi-step PTO request workflow and policy retrieval.',
     },
 }

@@ -41,7 +41,7 @@ class RetrievalTests(unittest.TestCase):
         )
 
         self.assertEqual(results[0]['id'], 1)
-        self.assertEqual(len(results), 2)
+        self.assertEqual(len(results), 1)
         self.assertTrue(all(item['source'] == 'support' for item in results))
 
 
