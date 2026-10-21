@@ -34,7 +34,7 @@ Open [http://127.0.0.1:5000](http://127.0.0.1:5000) in a browser.
 
 The repository includes [render.yaml](render.yaml) for two zero-cost Render web services: the Flask web app and a separate HTTP MCP service. To deploy them, push this repository to GitHub, open the Render dashboard, choose **New > Blueprint**, connect the repository, and apply the `render.yaml` blueprint. Render will install the dependencies and start both services on their platform-provided ports.
 
-The web service receives the MCP service host through `MCP_SERVER_URL`. The HTTP client normalizes that host to HTTPS and calls the MCP JSON-RPC endpoint at `/mcp`. When `MCP_SERVER_URL` is absent locally, the app falls back to the stdio MCP server.
+The web service receives the MCP service's public URL through `MCP_SERVER_URL`. This uses the public URL because both services are on Render's free tier; free web services cannot receive private-network requests. The HTTP client calls the MCP JSON-RPC endpoint at `/mcp`. When `MCP_SERVER_URL` is absent locally, the app falls back to the stdio MCP server.
 
 Both services set `autoDeployTrigger: checksPass` so a provisioned Render Blueprint waits for checks to pass before automatic deployment.
 

@@ -139,7 +139,10 @@ uses the stdio client to call tools/list and then call retrieve_policy; the
 suite also checks the tool catalogue and protected mock-action confirmation.
 render.yaml now sets autoDeployTrigger=checksPass on both Render web services,
 so a provisioned Render Blueprint is configured to wait for successful checks
-before automatic deployment.
+before automatic deployment. The app's MCP_SERVER_URL references the MCP
+service's public url property, not its internal host: Render free web services
+can make private-network requests but cannot receive them, so using the
+internal host would break app-to-MCP traffic on this free-tier setup.
 
 Spoken deployment verification:
 "The candidate public URL is https://quantintechniques-hr.onrender.com. I

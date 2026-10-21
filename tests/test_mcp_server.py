@@ -1,8 +1,43 @@
 import unittest
+from unittest.mock import Mock, patch
 from pathlib import Path
 
+from scripts.http_mcp_client import HTTPMCPClient
 from scripts.mcp_client import StdioMCPClient
 from scripts.mcp_server import MCPServer
+
+
+class HTTPMCPClientTests(unittest.TestCase):
+    @patch('scripts.http_mcp_client.urllib.request.urlopen')
+    def test_calls_public_render_url_without_changing_https(self, urlopen):
+        response = Mock()
+        response.__enter__ = Mock(return_value=response)
+        response.__exit__ = Mock(return_value=False)
+        response.read.return_value = (
+            b'{"jsonrpc":"2.0","id":1,"result":{"tools":[{"name":"retrieve_policy"}]}}'
+        )
+        urlopen.return_value = response
+        client = HTTPMCPClient('https://quantintechniques-hr-mcp.onrender.com/')
+
+        tools = client.list_tools()
+
+        self.assertEqual(tools, [{'name': 'retrieve_policy'}])
+        request = urlopen.call_args.args[0]
+        self.assertEqual(request.full_url, 'https://quantintechniques-hr-mcp.onrender.com/mcp')
+
+    @patch('scripts.http_mcp_client.urllib.request.urlopen')
+    def test_adds_https_to_render_hostname(self, urlopen):
+        response = Mock()
+        response.__enter__ = Mock(return_value=response)
+        response.__exit__ = Mock(return_value=False)
+        response.read.return_value = b'{"jsonrpc":"2.0","id":1,"result":{"tools":[]}}'
+        urlopen.return_value = response
+        client = HTTPMCPClient('quantintechniques-hr-mcp.onrender.com')
+
+        client.list_tools()
+
+        request = urlopen.call_args.args[0]
+        self.assertEqual(request.full_url, 'https://quantintechniques-hr-mcp.onrender.com/mcp')
 
 
 class MCPServerTests(unittest.TestCase):

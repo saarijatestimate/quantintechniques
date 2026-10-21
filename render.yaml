@@ -14,7 +14,7 @@ services:
         fromService:
           type: web
           name: quantintechniques-hr-mcp
-          property: host
+          property: url
 
   - type: web
     name: quantintechniques-hr-mcp
